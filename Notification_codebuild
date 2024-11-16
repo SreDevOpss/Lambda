@@ -1,0 +1,62 @@
+import os
+import subprocess
+import boto3
+import requests
+import json
+
+def lambda_handler(event, context):
+    teams_webhook_url = os.environ['TEAMS_WEBHOOK_URL']
+
+    # Install required dependencies using pip
+    try:
+        subprocess.check_output(["pip", "install", "-r", "requirements.txt"])
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install dependencies: {e.output.decode()}")
+
+    # Check if the event is from CodeBuild and retrieve the build status and project name
+    if event['source'] == 'aws.codebuild' and event['detail-type'] == 'CodeBuild Build State Change':
+        build_status = event['detail']['build-status']
+        build_name = event['detail']['project-name']
+
+        # Prepare the notification message based on build status
+        if build_status == 'SUCCEEDED':
+            message = f"CodeBuild {build_name} succeeded."
+            color = "00FF00"  # Green color for success
+            title = "CodeBuild Success"
+        elif build_status == 'FAILED':
+            message = f"OOPS CodeBuild {build_name} has failed."
+            color = "FF0000"  # Red color for failure
+            title = "CodeBuild Failure"
+        else:
+            # Ignore other build statuses
+            return {
+                'statusCode': 200,
+                'body': 'Not a relevant build status'
+            }
+
+        # Prepare the payload for Microsoft Teams
+        payload = {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "themeColor": color,
+            "summary": title,
+            "sections": [
+                {
+                    "activityTitle": title,
+                    "text": message
+                }
+            ]
+        }
+
+        # Send the notification to Microsoft Teams using requests module
+        response = requests.post(teams_webhook_url, json=payload, headers={'Content-Type': 'application/json'})
+
+        # Check if the notification was successfully sent
+        if response.status_code != 200:
+            print(f"Failed to send Microsoft Teams notification: {response.text}")
+
+    return {
+        'statusCode': 200,
+        'body': 'Notification sent'
+    }
+
