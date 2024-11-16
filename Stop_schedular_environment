@@ -1,0 +1,21 @@
+# import json
+# import boto3
+
+# def lambda_handler(event, context):
+#     client = boto3.client('ecs')
+#     #scale_down_ecs_service("Schedular", "Schedular-service", client)
+#     scale_down_ecs_service("E-portal", "eportal", client)
+
+#     # TODO implement
+#     return {
+#         'statusCode': 200,
+#         'body': json.dumps('Hello from Lambda!')
+#     }
+
+
+# def scale_down_ecs_service(cluster_name, service_name, client):
+#     response = client.update_service(
+#     cluster=cluster_name,
+#     service=service_name,
+#     desiredCount=0)
+#     print(response)
