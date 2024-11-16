@@ -1,0 +1,47 @@
+import os
+import boto3
+import requests
+
+def lambda_handler(event, context):
+    teams_webhook_url = os.environ['TEAMS_WEBHOOK_URL']
+
+    # Check if the event is from CodePipeline and retrieve the state
+    if event['source'] == 'aws.codepipeline':
+        pipeline_state = event['detail']['state']
+        pipeline_name = event['detail']['pipeline']
+        execution_id = event['detail']['execution-id']
+
+        # List of CodePipeline names to monitor
+        pipelines_to_monitor = ['employee-portal-backend-master', 'Schedular-master','one-now-dev-FE', 'one-now-dev']
+
+        # Check if the pipeline is in the list of pipelines to monitor
+        if pipeline_name in pipelines_to_monitor:
+            # Compose the notification message based on pipeline state
+            if pipeline_state == 'FAILED':
+                message = f"OOPS CodePipeline {pipeline_name} is failed. Execution ID: {execution_id}"
+                title = "CodePipeline Failure"
+                theme_color = "FF0000"  # Red color for failure
+            elif pipeline_state == 'SUCCEEDED':
+                message = f"CodePipeline {pipeline_name} succeeded. Execution ID: {execution_id}"
+                title = "CodePipeline Success"
+                theme_color = "00FF00"  # Green color for success
+
+            # Send the notification to Microsoft Teams
+            payload = {
+                "@type": "MessageCard",
+                "@context": "http://schema.org/extensions",
+                "themeColor": theme_color,
+                "title": title,
+                "text": message
+            }
+            headers = {'Content-Type': 'application/json'}
+            response = requests.post(teams_webhook_url, json=payload, headers=headers)
+
+            # Check if the notification was successfully sent
+            if response.status_code != 200:
+                print(f"Failed to send Microsoft Teams notification: {response.text}")
+
+    return {
+        'statusCode': 200,
+        'body': 'Notification sent'
+    }
