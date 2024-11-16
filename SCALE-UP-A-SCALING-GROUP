@@ -1,0 +1,27 @@
+import json
+import boto3
+
+region_name='us-east-2'
+
+autoscaling = boto3.client('autoscaling', region_name=region_name)
+
+def lambda_handler(event, context):
+    start_env()
+    return {
+        'statusCode': 200
+    }
+
+    
+def start_env():
+    #update_auto_scaling_group("EC2ContainerService-Schedular-EcsInstanceAsg-1613EDMP2Q1ON", 1, 1)
+    update_auto_scaling_group("EC2ContainerService-E-portal-EcsInstanceAsg-GR43TIQ2SYYZ", 1, 1)
+    
+    
+
+
+def update_auto_scaling_group(groupName, desiredCount, minCount):
+    autoscaling.update_auto_scaling_group(
+        AutoScalingGroupName=groupName,
+        MinSize=minCount,
+        DesiredCapacity=desiredCount
+    )
